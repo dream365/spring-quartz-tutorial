@@ -18,7 +18,29 @@ import java.util.*
 
 /** @see <a href="https://www.baeldung.com/spring-quartz-schedule">Scheduling in Spring with Quartz</a> **/
 @Configuration
-class SpringQuartzScheduler : ILogging by LoggingImpl<SpringQuartzScheduler>() {
+class SpringQuartzScheduler(private val applicationContext: ApplicationContext) : ILogging by LoggingImpl<SpringQuartzScheduler>() {
+
+    @Bean
+    fun springBeanJobFactory(): SpringBeanJobFactory? {
+        val jobFactory = AutoWiringSpringBeanJobFactory()
+        log.debug("Configuring Job factory")
+
+        jobFactory.setUpApplicationContext(applicationContext)
+        return jobFactory
+    }
+
+    @Bean
+    fun scheduler(trigger: Trigger, job: JobDetail?): SchedulerFactoryBean {
+        val schedulerFactory = SchedulerFactoryBean()
+        schedulerFactory.setConfigLocation(ClassPathResource("quartz.properties"))
+        log.info("Setting the Scheduler up")
+
+        schedulerFactory.setJobFactory(springBeanJobFactory())
+        schedulerFactory.setJobDetails(job)
+        schedulerFactory.setTriggers(trigger)
+
+        return schedulerFactory
+    }
 
     /**
      * While the job is the workhorse, Quartz does not store an actual instance of the job class.
@@ -27,6 +49,8 @@ class SpringQuartzScheduler : ILogging by LoggingImpl<SpringQuartzScheduler>() {
      **/
     @Bean
     fun jobDetail(): JobDetailFactoryBean {
+        log.info("Setting the job detail")
+
         val jobDetailFactory = JobDetailFactoryBean()
         jobDetailFactory.setJobClass(SampleJob::class.java)
         jobDetailFactory.setName("Sample_Qrtz_Job_Detail")
@@ -34,7 +58,6 @@ class SpringQuartzScheduler : ILogging by LoggingImpl<SpringQuartzScheduler>() {
         jobDetailFactory.setDurability(true)
         return jobDetailFactory
     }
-
 
     // Builder-style API
     /*@Bean
