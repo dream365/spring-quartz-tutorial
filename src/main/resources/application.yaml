@@ -6,4 +6,4 @@ server:
 spring:
   data:
     mongodb:
-      uri: mongodb://sewon:ybrainmongo@localhost:27017/quartz
+      uri: mongodb://sewon:sewon@localhost:27017/quartz
